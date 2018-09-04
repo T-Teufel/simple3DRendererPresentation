@@ -1,0 +1,496 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>A Simple 3D Render-Engine</title>
+
+		<link rel="stylesheet" href="reveal.js-master/css/reveal.css">
+		<link rel="stylesheet" href="reveal.js-master/css/theme/black.css">
+
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="reveal.js-master/lib/css/zenburn.css">
+
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+				<section>
+					<h4>Implementing a simple 3D Render-Engine in JavaScript</h4>
+					<p>Timo Teufel</p>
+				</section>
+				<section>
+					<canvas id="finalCanvas" style="background-color: white;" width="500" height="500"></canvas>
+				</section>
+
+				<!-- Description -->
+				<section>
+					<section>
+						The Description
+					</section>
+					<section>
+						<p>Coordinate Systems</p>
+						<canvas id="vectorAnimationCanvas" style="background-color: white;" width="500" height="500"></canvas>
+					</section>
+
+					<section >
+						<pre class="javascript"><code data-trim>
+							function Vector(x, y, z){
+							  this.x = x;
+							  this.y = y;
+							  this.z = z;
+							}
+					  </code></pre>
+					</section>
+
+					<section>
+						<pre class="javascript"><code data-trim>
+							var object = {
+							  vertices: [
+							    new Vector(0,-1,0),
+							    new Vector(1,0,1),
+							    new Vector(-1,0,1),
+							    new Vector(-1,0,-1),
+							    new Vector(1,0,-1)
+							  ],
+							  faces: [
+							    // Sides
+							    {
+							      points: [0, 1, 2],
+							      color: "#FF00FF"
+							    },
+							    {
+							      points: [0, 2, 3],
+							      color: "#0000FF"
+							    },
+							    {
+							      points: [0, 3, 4],
+							      color: "#00FF00"
+							    },
+							    {
+							      points: [0, 4, 1],
+							      color: "#FF0000"
+							    },
+							    // Base
+							    {
+							      points: [1, 2, 3],
+							      color: "#AAAAAA"
+							    },
+							    {
+							      points: [4, 1, 3],
+							      color: "#AAAAAA"
+							    }
+							  ]
+							}
+					  </code></pre>
+					</section>
+				</section>
+
+				<!-- Projection -->
+				<section>
+					<section>
+						Rendering Points
+					</section>
+					<section>
+						<p>Orthographic Projection</p>
+						<canvas id="projectionAnimationCanvas" style="background-color: white;" width="500" height="500"></canvas>
+					</section>
+					<section>
+						<pre class="javascript"><code data-trim>
+							canvas = document.getElementById('canvasId');
+							ctx = canvas.getContext('2d');
+
+							for (let i = 0; i < object.faces.length; i++) {
+							  let face = object.faces[i];
+							  for (let j = 0; j < face.points.length; j++) {
+
+							    let vertex = object.vertices[face.points[j]];
+							    ctx.fillRect(Math.trunc(vertex.x), Math.trunc(vertex.y), 1, 1);
+							  }
+							}
+					  </code></pre>
+					</section>
+					<section>
+						<canvas id="projectionCanvas" style="background-color: white;" width="500" height="500"></canvas>
+					</section>
+
+				</section>
+
+				<!-- Transformations -->
+				<section>
+					<section>
+						Basic Transformations
+					</section>
+					<section>
+						<p>Translations</p>
+						<canvas id="translationAnimationCanvas" style="background-color: white;" width="500" height="500"></canvas>
+					</section>
+					<section>
+						<p>Scaling</p>
+						<canvas id="scalingAnimationCanvas" style="background-color: white;" width="500" height="500"></canvas>
+					</section>
+					<section>
+						<pre class="javascript"><code data-trim>
+							Vector.prototype.add = function (other) {
+							  this.x += other.x;
+							  this.y += other.y;
+							  this.z += other.z;
+							};
+
+							Vector.prototype.mul = function (scalar) {
+							  this.x *= scalar;
+							  this.y *= scalar;
+							  this.z *= scalar;
+							};
+					  </code></pre>
+					</section>
+					<section>
+						<pre class="javascript"><code data-trim>
+							for (let i = 0; i < object.vertices.length; i++) {
+							  object.vertices[i].mul(50);
+							  object.vertices[i].add(new Vector(250, 250, 0));
+							}
+					  </code></pre>
+					</section>
+					<section>
+						<canvas id="basicTransformationsCanvas" style="background-color: white;" width="500" height="500"></canvas>
+					</section>
+				</section>
+
+				<!-- Wireframe -->
+				<section>
+					<section>
+						Rendering Edges
+					</section>
+					<section>
+						<p>The Wireframe</p>
+						<canvas id="wireframeAnimationCanvas" style="background-color: white;" width="500" height="500"></canvas>
+					</section>
+					<section>
+						<pre class="javascript"><code data-trim>
+							for (let i = 0; i < object.faces.length; i++) {
+							  let face = object.faces[i];
+							  for (let j = 0; j < face.points.length; j++) {
+
+							    let vertex_0 = object.vertices[face.points[j]];
+							    let vertex_1 = object.vertices[face.points[(j+1)%3]];
+
+							    // Draw line
+							    ctx.beginPath();
+							    ctx.moveTo(vertex_0.x, vertex_0.y);
+							    ctx.lineTo(vertex_1.x, vertex_1.y);
+							    ctx.closePath();
+							    ctx.stroke();
+							  }
+							}
+					  </code></pre>
+					</section>
+					<section>
+						<canvas id="wireframeCanvas" style="background-color: white;" width="500" height="500"></canvas>
+					</section>
+
+				</section>
+
+				<!-- Rotation -->
+				<section>
+					<section>
+						Continuous Rotation
+					</section>
+					<section>
+						<p>Rotations in 2D Space</p>
+						<canvas id="rotation2DAnimationCanvas" style="background-color: white;" width="500" height="500"></canvas>
+					</section>
+					<section>
+						<p>Rotations in 3D Space</p>
+						<canvas id="rotation3DAnimationCanvas" style="background-color: white;" width="500" height="500"></canvas>
+					</section>
+					<section>
+						<pre class="javascript"><code data-trim>
+							Vector.prototype.rotateX = function (angle) {
+							  this.x = this.x;
+							  this.y = this.y*Math.cos(angle) - this.z*Math.sin(angle);
+							  this.z = this.y*Math.sin(angle) + this.z*Math.cos(angle);
+							};
+
+							Vector.prototype.rotateY = function (angle) {
+							  this.x = this.x*Math.cos(angle) + this.z*Math.sin(angle);
+							  this.y = this.y;
+							  this.z = -this.x*Math.sin(angle) + this.z*Math.cos(angle);
+							};
+
+							Vector.prototype.rotateZ = function (angle) {
+							  this.x = this.x*Math.cos(angle) - this.y*Math.sin(angle);
+							  this.y = this.x*Math.sin(angle) + this.y*Math.cos(angle);
+							  this.z = this.z;
+							};
+					  </code></pre>
+					</section>
+					<section>
+						<pre class="javascript"><code data-trim>
+							function transform(){
+							  for (let i = 0; i < object.vertices.length; i++) {
+							    object.vertices[i].mul(50);
+							    object.vertices[i].add(new Vector(250, 250, 0));
+							  }
+							}
+
+							function reverseTransform(){
+							  for (let i = 0; i < object.vertices.length; i++) {
+							    object.vertices[i].add(new Vector(-250, -250, 0));
+							    object.vertices[i].mul(1/50);
+							  }
+							}
+
+							function continueRotation(){
+							  for (let i = 0; i < object.vertices.length; i++) {
+							    object.vertices[i].rotateX(-0.005);
+							    object.vertices[i].rotateZ(-0.005);
+							  }
+							}
+					  </code></pre>
+					</section>
+					<section>
+						<pre><code data-trim>
+							function render(){
+							  // Render wireframe
+							}
+
+							pause = false;
+							canvas.addEventListener('click',() =>{pause = !pause}, false);
+
+							function loop(){
+							  if(!pause){
+							    ctx.clearRect(0, 0, 500, 500);
+							    transform();
+							    render();
+							    reverseTransform();
+							    continueRotation();
+							  }
+							}
+
+							loop();
+
+							pause = true;
+							setInterval(loop, 10);
+					  </code></pre>
+					</section>
+					<section>
+						<canvas id="rotationCanvas" style="background-color: white;" width="500" height="500"></canvas>
+					</section>
+				</section>
+
+				<!-- Rasterization -->
+				<section>
+					<section>
+						Rasterization
+					</section>
+					<section>
+						<p>Barycentric Coordinates</p>
+						<canvas id="barycentricCoordinatesCanvas" style="background-color: white;" width="500" height="500"></canvas>
+					</section>
+					<section>
+						<pre class="javascript"><code data-trim>
+							function render(){
+							  for (let i = 0; i < object.faces.length; i++) {
+							    let face = object.faces[i];
+							    ctx.fillStyle = face.color;
+
+							    let p1 = object.vertices[face.points[0]];
+							    let p2 = object.vertices[face.points[1]];
+							    let p3 = object.vertices[face.points[2]];
+
+							    let xMin = Math.floor(Math.min(p1.x, p2.x, p3.x));
+							    let xMax = Math.ceil(Math.max(p1.x, p2.x, p3.x));
+							    let yMin = Math.floor(Math.min(p1.y, p2.y, p3.y));
+							    let yMax = Math.ceil(Math.max(p1.y, p2.y, p3.y));
+
+							    let divider = (p2.y-p3.y)*(p1.x-p3.x)+(p3.x-p2.x)*(p1.y-p3.y);
+
+							    if(divider != 0){
+							      for (let x = xMin; x <= xMax; x++) {
+							        for (let y = yMin; y <= yMax; y++) {
+							            let l1 = ((p2.y-p3.y)*(x-p3.x)+(p3.x-p2.x)*(y-p3.y))/divider;
+							            let l2 = ((p3.y-p1.y)*(x-p3.x)+(p1.x-p3.x)*(y-p3.y))/divider;
+							            let l3 = 1-l1-l2;
+							            if(0 <= l1 && 0 <= l2 && 0 <= l3){
+							              ctx.fillRect(x, y, 1, 1);
+							            }
+							        }
+							      }
+							    }
+							  }
+							}
+					  </code></pre>
+					</section>
+					<section>
+						<canvas id="rasterizationCanvas" style="background-color: white;" width="500" height="500"></canvas>
+					</section>
+				</section>
+
+				<!-- Z-Buffer -->
+				<section>
+					<section>
+						The Visibility Problem
+					</section>
+					<section>
+						<pre class="javascript"><code data-trim>
+							function render(){
+							  let zBuffer = [];
+							  for (let i = 0; i < 500*500; i++) {
+							    zBuffer.push(-1000000);
+							  }
+
+							  for (let i = 0; i < object.faces.length; i++) {
+									...
+								}
+							}
+					  </code></pre>
+					</section>
+
+					<section>
+						<pre class="javascript"><code data-trim>
+							if(0 <= l1 && 0 <= l2 && 0 <= l3){
+								let zIndex = Math.trunc(y*500+x);
+								let depth = l1*p1.z + l2*p2.z + l3*p3.z;
+
+								if(depth > zBuffer[zIndex]){
+									zBuffer[zIndex] = depth;
+									ctx.fillRect(x, y, 1, 1);
+								}
+							}
+					  </code></pre>
+					</section>
+
+					<section>
+						<canvas id="zBufferCanvas" style="background-color: white;" width="500" height="500"></canvas>
+					</section>
+				</section>
+
+				<!-- Lighting -->
+				<section>
+					<section>
+						Lighting
+					</section>
+					<section>
+						<p>Flat Shading</p>
+						<canvas id="normalVectorAnimationCanvas" style="background-color: white;" width="500" height="500"></canvas>
+					</section>
+					<section>
+						<pre class="javascript"><code data-trim>
+							Vector.prototype.sub = function (other) {
+							  this.x -= other.x;
+							  this.y -= other.y;
+							  this.z -= other.z;
+							};
+
+							Vector.prototype.mag = function () {
+							  return Math.sqrt(this.x*this.x+this.y*this.y+this.z*this.z);
+							};
+
+							Vector.prototype.norm = function () {
+							  let length = this.mag();
+							  this.x /= length;
+							  this.y /= length;
+							  this.z /= length;
+							};
+
+							Vector.prototype.cross = function (other) {
+							  return new Vector(
+							    this.y*other.z-this.z*other.y,
+							    this.z*other.x-this.x*other.z,
+							    this.x*other.y-this.y*other.x
+							  )
+							};
+					  </code></pre>
+					</section>
+					<section>
+						<pre class="javascript"><code data-trim>
+							if(depth > zBuffer[zIndex]){
+								zBuffer[zIndex] = depth;
+
+								let finalColor = "#";
+
+								let e1 = new Vector(p2.x, p2.y, p2.z);
+								let e2 = new Vector(p3.x, p3.y, p3.z);
+
+								e1.sub(p1);
+								e2.sub(p1);
+
+								let cross = e1.cross(e2);
+								cross.norm();
+
+								let shade = Math.abs(cross.z);
+
+								for (let j = 0; j < 3; j++) {
+									let value = parseInt(face.color.substring(2*j+1, 2*j+3), 16);
+									value = Math.ceil(value*shade)
+
+									let add = (value).toString(16);
+									while(add.length < 2){
+										add = "0"+add;
+									}
+									finalColor+=add;
+								}
+								ctx.fillStyle = finalColor;
+								ctx.fillRect(x, y, 1, 1);
+							}
+					  </code></pre>
+					</section>
+
+
+					<section>
+						<canvas id="shadingCanvas" style="background-color: white;" width="500" height="500"></canvas>
+					</section>
+				</section>
+
+				<!-- Examples -->
+				<section>
+					<section>
+						What to do Next?
+					</section>
+					<section>
+						<p>Edges</p>
+						<canvas id="EdgeAnimationCanvas" style="background-color: white;" width="500" height="500"></canvas>
+					</section>
+
+				</section>
+			</div>
+		</div>
+
+
+		<script src="reveal.js-master/lib/js/head.min.js"></script>
+		<script src="reveal.js-master/js/reveal.js"></script>
+
+		<script>
+			// More info about config & dependencies:
+			// - https://github.com/hakimel/reveal.js#configuration
+			// - https://github.com/hakimel/reveal.js#dependencies
+			Reveal.initialize({
+				width: '75%',
+    		height: '75%',
+				dependencies: [
+					{ src: 'reveal.js-master/plugin/markdown/marked.js' },
+					{ src: 'reveal.js-master/plugin/markdown/markdown.js' },
+					{ src: 'reveal.js-master/plugin/notes/notes.js', async: true },
+					{ src: 'reveal.js-master/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }
+				]
+			});
+		</script>
+
+	</body>
+	<script language="javascript" type="text/javascript" src="Animations/vectorsAnimation.js"></script>
+	<script language="javascript" type="text/javascript" src="Animations/pyramidAnimation.js"></script>
+	<script language="javascript" type="text/javascript" src="Animations/edgeAnimation.js"></script>
+
+
+
+	<script language="javascript" type="text/javascript" src="Stages/0stageProjection.js"></script>
+	<script language="javascript" type="text/javascript" src="Stages/1stageTransform.js"></script>
+	<script language="javascript" type="text/javascript" src="Stages/2stageWireframe.js"></script>
+	<script language="javascript" type="text/javascript" src="Stages/3stageRotation.js"></script>
+	<script language="javascript" type="text/javascript" src="Stages/4stageRasterization.js"></script>
+	<script language="javascript" type="text/javascript" src="Stages/5stageZBuffer.js"></script>
+	<script language="javascript" type="text/javascript" src="Stages/6stageShading.js"></script>
+
+</html>
